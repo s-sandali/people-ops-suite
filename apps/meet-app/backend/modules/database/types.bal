@@ -154,9 +154,91 @@ public type MeetingHostStat record {|
 
 # [Database]Scheduled meeting count for a month.
 #
-# + month_key - The month 
+# + month_key - The month
 # + count - Number of meetings scheduled
 public type ScheduledMeetingStat record {|
     string month_key;
     int count;
+|};
+
+# [Database] Recording processing state, for auto-recorded meetings tracked via the add-on.
+public enum RecordingState {
+    PENDING,
+    ATTACHED,
+    FAILED
+}
+
+# [Database] Insert/update payload for an auto-recorded meeting row.
+#
+# + title - The event's title
+# + spaceName - Resource name of the Meet space (e.g. `spaces/abc123`) -- the lookup key
+# + googleEventId - Calendar event ID the space was created for
+# + organizer - Email of the event organizer
+# + startTime - Event start time
+# + endTime - Event end time
+# + internalParticipants - wso2.com attendees, comma-joined
+# + externalParticipants - Non-wso2.com attendees, comma-joined
+# + recordingState - Current processing state
+# + driveFileId - Drive file ID of the recording, once resolved
+# + opportunityId - Salesforce Opportunity ID this call was scheduled for, if any
+# + opportunityDetails - Compact JSON snapshot of the deal (name, stage, amount, account, close
+# date), as a raw JSON string -- stored as-is, not parsed, since nothing here needs individual
+# fields out of it
+public type MeetRecordingPayload record {|
+    string title;
+    string spaceName;
+    string googleEventId;
+    string organizer;
+    string startTime;
+    string endTime;
+    string internalParticipants;
+    string externalParticipants;
+    RecordingState recordingState;
+    string? driveFileId = ();
+    string? opportunityId = ();
+    string? opportunityDetails = ();
+|};
+
+# [Database] An auto-recorded meeting row, read back by space name.
+#
+# + meetingId - Auto-increment meeting ID
+# + spaceName - Resource name of the Meet space
+# + title - The event's title
+# + googleEventId - Calendar event ID
+# + organizer - Email of the event organizer
+# + startTime - Event start time
+# + endTime - Event end time
+# + internalParticipants - wso2.com attendees, comma-joined
+# + externalParticipants - Non-wso2.com attendees, comma-joined
+# + recordingState - Current processing state
+# + driveFileId - Drive file ID of the recording, if resolved yet
+# + opportunityId - Salesforce Opportunity ID this call was scheduled for, if any
+# + opportunityDetails - Compact JSON snapshot of the deal, as a raw JSON string
+# + transcriptState - Current transcript processing state, () if no transcript for this
+# meeting (either transcription wasn't enabled, or no transcript-ready notification has
+# arrived yet) -- reuses RecordingState rather than a separate enum with the same member
+# names, which would collide as duplicate module-level constants
+# + transcriptFileId - Drive file ID (Google Doc) of the transcript, if resolved yet
+# + smartNotesState - Current smart-notes processing state, () if no smart notes for this
+# meeting; same reused-RecordingState and NULL-means-"none" semantics as transcriptState
+# + smartNotesFileId - Drive file ID (Google Doc, separate from the transcript's) of the
+# smart notes, if resolved yet
+public type MeetRecordingRow record {|
+    int meetingId;
+    string spaceName;
+    string title;
+    string googleEventId;
+    string organizer;
+    string startTime;
+    string endTime;
+    string internalParticipants;
+    string externalParticipants;
+    RecordingState recordingState;
+    string? driveFileId;
+    string? opportunityId;
+    string? opportunityDetails;
+    RecordingState? transcriptState;
+    string? transcriptFileId;
+    RecordingState? smartNotesState;
+    string? smartNotesFileId;
 |};
